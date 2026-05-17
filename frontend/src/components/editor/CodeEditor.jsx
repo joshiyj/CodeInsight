@@ -1,8 +1,9 @@
 // src/components/editor/CodeEditor.jsx
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import Editor from '@monaco-editor/react';
 import { useEditorStore }   from '../../store/editorStore.js';
-import { useAnalysisStore } from '../../store/analysisStore.js';
+import { useAnalysisStore, registerMarkerCleaner } from '../../store/analysisStore.js';
+import { detectLanguage }   from '../../utils/codeDetector.js';
 
 const MONACO_LANGUAGE_MAP = {
   javascript: 'javascript',
@@ -12,92 +13,127 @@ const MONACO_LANGUAGE_MAP = {
   cpp:        'cpp',
 };
 
-// Monaco MarkerSeverity enum values
 const MarkerSeverity = { Hint: 1, Info: 2, Warning: 4, Error: 8 };
+const SEVERITY_MAP   = { error: 8, warning: 4, info: 2, hint: 1 };
 
-const SEVERITY_MAP = {
-  error:   MarkerSeverity.Error,
-  warning: MarkerSeverity.Warning,
-  info:    MarkerSeverity.Info,
-  hint:    MarkerSeverity.Hint,
-};
-
-// Inject the highlight class once — no external CSS file needed
 const STYLE_ID = 'codeinsight-line-highlight';
 if (!document.getElementById(STYLE_ID)) {
-  const style = document.createElement('style');
-  style.id = STYLE_ID;
-  style.textContent = `
-    .ci-line-highlight {
-      background: rgba(99, 102, 241, 0.15);
-      border-left: 2px solid rgba(99, 102, 241, 0.7);
-    }
-  `;
-  document.head.appendChild(style);
+  const s = document.createElement('style');
+  s.id = STYLE_ID;
+  s.textContent = `.ci-line-highlight { background: rgba(99,102,241,0.15); border-left: 2px solid rgba(99,102,241,0.7); }`;
+  document.head.appendChild(s);
 }
 
 export default function CodeEditor() {
-  const { code, language, setCode } = useEditorStore();
-  const { issues, selectedIssue }   = useAnalysisStore();
-  const editorRef                   = useRef(null);
-  const monacoRef                   = useRef(null);
-  const decorationsRef              = useRef([]);   // track active decorations so we can clear them
+  const { code, language, setCode, setLanguage } = useEditorStore();
+  const { issues, selectedIssue }                = useAnalysisStore();
+  const editorRef      = useRef(null);
+  const monacoRef      = useRef(null);
+  const decorationsRef = useRef([]);
 
-  // ── Apply markers whenever issues change ──────────────────
+  // ── Toast state for detection notification ────────────────
+  const toastRef      = useRef(null);
+  const toastTimerRef = useRef(null);
+
+  const showToast = useCallback((lang) => {
+    // Remove previous toast
+    toastRef.current?.remove();
+    clearTimeout(toastTimerRef.current);
+
+    const el = document.createElement('div');
+    el.textContent = `Detected: ${lang}`;
+    el.style.cssText = `
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #3730a3; color: #e0e7ff;
+      font-size: 12px; font-family: 'Fira Code', monospace;
+      padding: 6px 16px; border-radius: 999px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      z-index: 9999; pointer-events: none;
+      animation: ci-toast-in 0.2s ease;
+    `;
+
+    // Inject keyframe once
+    if (!document.getElementById('ci-toast-style')) {
+      const ks = document.createElement('style');
+      ks.id = 'ci-toast-style';
+      ks.textContent = `@keyframes ci-toast-in { from { opacity:0; transform: translateX(-50%) translateY(8px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }`;
+      document.head.appendChild(ks);
+    }
+
+    document.body.appendChild(el);
+    toastRef.current = el;
+
+    toastTimerRef.current = setTimeout(() => {
+      el.style.transition = 'opacity 0.3s';
+      el.style.opacity    = '0';
+      setTimeout(() => el.remove(), 300);
+    }, 2000);
+  }, []);
+
+  // ── Monaco markers ────────────────────────────────────────
   useEffect(() => {
     const editor = editorRef.current;
     const monaco = monacoRef.current;
     if (!editor || !monaco) return;
-
     const model = editor.getModel();
     if (!model) return;
 
-    const markers = issues.map((issue) => ({
+    monaco.editor.setModelMarkers(model, 'codeinsight', issues.map((issue) => ({
       severity:        SEVERITY_MAP[issue.severity] ?? MarkerSeverity.Warning,
       startLineNumber: issue.line,
       startColumn:     Math.max(1, issue.column || 1),
-      endLineNumber:   issue.line, // force it to only underline the single line
-      endColumn:       999,        // highlight to the end of that single line
+      endLineNumber:   issue.line,
+      endColumn:       999,
       message:         `[${issue.category}] ${issue.message}`,
       source:          'CodeInsight AI',
-    }));
-
-    monaco.editor.setModelMarkers(model, 'codeinsight', markers);
+    })));
   }, [issues]);
 
-  // ── Scroll + flash highlight when an issue is selected ────
+  // ── Line highlight on issue select ────────────────────────
   useEffect(() => {
     const editor = editorRef.current;
     const monaco = monacoRef.current;
     if (!editor || !monaco || !selectedIssue) return;
 
     const line = selectedIssue.line;
-
-    // Scroll that line to the center of the viewport
-    editor.revealLineInCenter(line, 0 /* Immediate */);
-
-    // Clear any previous highlight decoration
+    editor.revealLineInCenter(line, 0);
     decorationsRef.current = editor.deltaDecorations(decorationsRef.current, [
-      {
-        range: new monaco.Range(line, 1, line, 1),
-        options: {
-          isWholeLine:   true,
-          className:     'ci-line-highlight',
-        },
-      },
+      { range: new monaco.Range(line, 1, line, 1), options: { isWholeLine: true, className: 'ci-line-highlight' } },
     ]);
-
-    // Remove the highlight after 1.5 s
-    const timer = setTimeout(() => {
+    const t = setTimeout(() => {
       decorationsRef.current = editor.deltaDecorations(decorationsRef.current, []);
     }, 1500);
-
-    return () => clearTimeout(timer);
+    return () => clearTimeout(t);
   }, [selectedIssue]);
 
+  // ── Language detection on paste ───────────────────────────
   function handleEditorDidMount(editor, monaco) {
     editorRef.current  = editor;
     monacoRef.current  = monaco;
+
+    // ── Register global marker cleaner ────────────────────
+    registerMarkerCleaner(() => {
+      const model = editor.getModel();
+      if (model) monaco.editor.setModelMarkers(model, 'codeinsight', []);
+      decorationsRef.current = editor.deltaDecorations(decorationsRef.current, []);
+    });
+
+    editor.onDidPaste(() => {
+      setTimeout(() => {
+        const content = editor.getValue();
+
+        // Clear markers and decorations on paste
+        const model = editor.getModel();
+        if (model) monaco.editor.setModelMarkers(model, 'codeinsight', []);
+        decorationsRef.current = editor.deltaDecorations(decorationsRef.current, []);
+
+        const result = detectLanguage(content);
+        if (result && result.language !== useEditorStore.getState().language) {
+          setLanguage(result.language);
+          showToast(result.language);
+        }
+      }, 0);
+    });
   }
 
   return (
