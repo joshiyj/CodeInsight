@@ -6,6 +6,7 @@ import { createAnalysisStream }  from '../../api/stream.js';
 import CodeEditor                from '../editor/CodeEditor.jsx';
 import AIInsightsPanel           from '../panels/AIInsightsPanel.jsx';
 import IssueListPanel            from '../panels/IssueListPanel.jsx';
+import DiagramPanel              from '../visualization/DiagramPanel.jsx';
 
 const LANGUAGES = [
   { value: 'javascript', label: 'JavaScript' },
@@ -19,7 +20,7 @@ export default function AppLayout() {
   const { code, language, isAnalyzing, setLanguage, setIsAnalyzing } = useEditorStore();
   const { issues, appendInsight, setIssues, setIsStreaming, setError, reset } = useAnalysisStore();
 
-  const [activeTab, setActiveTab] = useState('insights'); // 'insights' | 'issues'
+  const [activeTab, setActiveTab] = useState('insights'); // 'insights' | 'issues' | 'diagram'
   const cleanupRef = useRef(null);
 
   const handleAnalyze = useCallback(() => {
@@ -34,8 +35,8 @@ export default function AppLayout() {
       onToken:    (text) => appendInsight(text),
       onIssues:   (list) => setIssues(list),
       onComplete: ()     => { setIsAnalyzing(false); setIsStreaming(false); },
-      onError:    ()     => {
-        setError('Connection error — check the backend is running and your API key is valid.');
+      onError:    (msg) => {
+        setError(msg || 'Connection error — check the backend is running and your API key is valid.');
         setIsAnalyzing(false);
         setIsStreaming(false);
       },
@@ -108,14 +109,18 @@ export default function AppLayout() {
               badge={issues.length > 0 ? issues.length : null}
               badgeColor={issues.some(i => i.severity === 'error') ? 'bg-red-500' : 'bg-yellow-500'}
             />
+            <TabButton
+              label="Diagram"
+              active={activeTab === 'diagram'}
+              onClick={() => setActiveTab('diagram')}
+            />
           </div>
 
           {/* Tab content */}
           <div className="flex-1 overflow-hidden">
-            {activeTab === 'insights'
-              ? <AIInsightsPanel />
-              : <IssueListPanel  />
-            }
+            {activeTab === 'insights' && <AIInsightsPanel />}
+            {activeTab === 'issues'   && <IssueListPanel  />}
+            {activeTab === 'diagram'  && <DiagramPanel    />}
           </div>
 
         </div>

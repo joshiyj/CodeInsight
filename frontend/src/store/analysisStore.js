@@ -14,16 +14,26 @@ export const useAnalysisStore = create((set) => ({
   isStreaming:   false,
   error:         null,
   selectedIssue: null,
+  diagram: null,
+  isDiagramLoading: false,
+  diagramError: null,
 
   appendInsight:    (text)   => set((s) => ({ insights: s.insights + text })),
   setIssues:        (issues) => set({ issues }),
   setIsStreaming:   (val)    => set({ isStreaming: val }),
   setError:         (error)  => set({ error }),
   setSelectedIssue: (issue)  => set({ selectedIssue: issue }),
+  
+  setDiagram:        (diagram) => set({ diagram, isDiagramLoading: false, diagramError: null }),
+  setDiagramLoading: (v)       => set({ isDiagramLoading: v, diagramError: null }),
+  setDiagramError:   (msg)     => set({ diagramError: msg, isDiagramLoading: false }),
 
   reset: () => {
     // Clear Monaco markers before wiping store state
     _clearMarkersCallback?.();
-    set({ insights: '', issues: [], isStreaming: false, error: null, selectedIssue: null });
+    set({ 
+      insights: '', issues: [], isStreaming: false, error: null, selectedIssue: null,
+      diagram: null, isDiagramLoading: false, diagramError: null 
+    });
   },
 }));

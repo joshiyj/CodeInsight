@@ -113,8 +113,26 @@ const md = {
 };
 
 export default function AIInsightsPanel() {
-  const { insights, isStreaming } = useAnalysisStore();
+  const { insights, isStreaming, error } = useAnalysisStore();
 
+  /* Error state */
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 px-6">
+        <div className="w-full max-w-sm rounded-xl border border-red-500/20 bg-red-500/5 p-4">
+          <div className="flex items-start gap-3">
+            <span className="text-lg shrink-0">⚠️</span>
+            <div>
+              <p className="text-[12px] font-semibold text-red-400 mb-1">Analysis Failed</p>
+              <p className="text-[12px] text-zinc-300 leading-relaxed">{error}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* Empty state */
   if (!insights && !isStreaming) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3">
@@ -140,9 +158,18 @@ export default function AIInsightsPanel() {
           )}
         </div>
 
-        <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]} components={md}>
-          {insights}
-        </ReactMarkdown>
+        {/* Strip any <issues> block that leaked through — safety net for split-chunk edge cases */}
+        {(() => {
+          const safeInsights = insights
+            .replace(/<issues>[\s\S]*?<\/issues>/g, '')
+            .replace(/<issues>[\s\S]*/g, '')   // catches unclosed block mid-stream
+            .trimEnd();
+          return (
+            <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]} components={md}>
+              {safeInsights}
+            </ReactMarkdown>
+          );
+        })()}
 
         {isStreaming && (
           <span className="inline-block w-[2px] h-3 bg-indigo-400 ml-1 animate-pulse rounded-sm align-middle" />

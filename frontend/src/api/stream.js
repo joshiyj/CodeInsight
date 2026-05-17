@@ -14,8 +14,13 @@ export function createAnalysisStream(code, language, { onToken, onIssues, onComp
     onIssues(list);
   });
   es.addEventListener('complete', (e) => { onComplete(JSON.parse(e.data)); es.close(); });
-  es.addEventListener('error',    (e) => { onError(e);                     es.close(); });
-  es.onerror = (e) => { onError(e); es.close(); };
+  es.addEventListener('error',    (e) => {
+    // e.data contains the JSON message when the server sends a custom error event
+    const msg = e.data ? (JSON.parse(e.data).message || 'Unknown error') : 'Connection lost — check the backend is running.';
+    onError(msg);
+    es.close();
+  });
+  es.onerror = () => { onError('Connection lost — check the backend is running.'); es.close(); };
 
   return () => es.close();
 }

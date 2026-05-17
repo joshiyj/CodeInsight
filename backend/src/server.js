@@ -4,6 +4,7 @@ import cors from 'cors';
 import { config } from './config/index.js';
 import { analyzeRouter } from './routes/analyze.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import diagramRouter from './routes/diagram.js';
 
 const app = express();
 
@@ -23,6 +24,9 @@ app.get('/api/health', (_req, res) => {
 
 // ── Error Handler (must be last) ──────────────────────────────
 app.use(errorHandler);
+
+// ── Mermaid Diagram Router ──────────────────────────────────────────────
+app.use('/api/diagram', diagramRouter);
 
 // ── Start ─────────────────────────────────────────────────────
 app.listen(config.port, () => {
