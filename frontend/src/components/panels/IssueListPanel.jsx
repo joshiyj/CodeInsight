@@ -11,10 +11,10 @@ import { useAnalysisStore } from '../../store/analysisStore.js';
 import { useEditorStore }   from '../../store/editorStore.js';
 
 const SEV = {
-  error:   { label: 'Error',   icon: '✕', accent: '#ef4444', text: 'text-red-400',    chip: 'bg-red-500/10 border-red-500/20 text-red-400',         border: 'border-l-red-500',    hover: 'hover:bg-zinc-800/50', open: 'bg-zinc-800/40' },
-  warning: { label: 'Warning', icon: '▲', accent: '#eab308', text: 'text-yellow-400', chip: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400', border: 'border-l-yellow-500', hover: 'hover:bg-zinc-800/50', open: 'bg-zinc-800/40' },
-  info:    { label: 'Info',    icon: 'ℹ', accent: '#3b82f6', text: 'text-blue-400',   chip: 'bg-blue-500/10 border-blue-500/20 text-blue-400',       border: 'border-l-blue-500',   hover: 'hover:bg-zinc-800/50', open: 'bg-zinc-800/40' },
-  hint:    { label: 'Hint',    icon: '◎', accent: '#71717a', text: 'text-zinc-400',   chip: 'bg-zinc-700/30 border-zinc-600/20 text-zinc-400',       border: 'border-l-zinc-600',   hover: 'hover:bg-zinc-800/50', open: 'bg-zinc-800/40' },
+  error:   { label: 'Error',   icon: '✕', accent: '#ef4444', text: 'text-red-400',    chip: 'bg-zinc-800/80 border border-zinc-700/40 text-zinc-300', border: 'border-l-red-500',    hover: 'hover:bg-zinc-800/20', open: 'bg-zinc-800/30' },
+  warning: { label: 'Warning', icon: '▲', accent: '#eab308', text: 'text-yellow-400', chip: 'bg-zinc-800/80 border border-zinc-700/40 text-zinc-300', border: 'border-l-yellow-500', hover: 'hover:bg-zinc-800/20', open: 'bg-zinc-800/30' },
+  info:    { label: 'Info',    icon: 'ℹ', accent: '#3b82f6', text: 'text-blue-400',   chip: 'bg-zinc-800/80 border border-zinc-700/40 text-zinc-300', border: 'border-l-blue-500',   hover: 'hover:bg-zinc-800/20', open: 'bg-zinc-800/30' },
+  hint:    { label: 'Hint',    icon: '◎', accent: '#71717a', text: 'text-zinc-500',   chip: 'bg-zinc-800/80 border border-zinc-700/40 text-zinc-300', border: 'border-l-zinc-700',   hover: 'hover:bg-zinc-800/20', open: 'bg-zinc-800/30' },
 };
 
 const FILTERS = ['all', 'error', 'warning', 'info', 'hint'];
@@ -71,30 +71,25 @@ const exMd = {
   tr: ({ children }) => <tr className="hover:bg-zinc-800/20">{children}</tr>,
 };
 
-// ── Splits explanation on \n and renders each line as a labelled row ───────
-function ExplanationRows({ text, accent, textColor }) {
-  // Lines like "**Root cause:** ..." / "**Impact:** ..." / "**Fix:** ..."
-  const lines = text.split('\n').filter(Boolean);
+function parseExplanation(text) {
+  let rootCause = '';
+  let impact = '';
+  let fix = '';
 
-  return (
-    <div className="space-y-1.5">
-      {lines.map((line, i) => (
-        <div key={i} className="flex items-start gap-2 py-1.5 px-2.5
-                                 rounded-md bg-zinc-800/40 border border-zinc-700/30">
-          <span className="w-0.5 self-stretch rounded-full shrink-0 mt-0.5" style={{ background: accent }} />
-          <div className="flex-1 min-w-0">
-            <ReactMarkdown
-              remarkPlugins={[remarkMath]}
-              rehypePlugins={[rehypeKatex]}
-              components={exMd}
-            >
-              {line}
-            </ReactMarkdown>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+  const lines = text.split('\n').filter(Boolean);
+  for (const line of lines) {
+    const clean = line.replace(/^\*?\*(Root cause|Impact|Fix):\*?\*\s*/i, '').trim();
+    if (/Root cause/i.test(line)) {
+      rootCause = clean;
+    } else if (/Impact/i.test(line)) {
+      impact = clean;
+    } else if (/Fix/i.test(line)) {
+      fix = clean;
+    } else {
+      if (!rootCause) rootCause = line;
+    }
+  }
+  return { rootCause, impact, fix };
 }
 
 export default function IssueListPanel() {
@@ -183,42 +178,55 @@ export default function IssueListPanel() {
                     >
                       <div className="px-3 pt-2 pb-3 space-y-2 bg-zinc-900/30">
 
-                        {/* Explanation — 3 compact rows */}
-                        <div className="rounded-lg overflow-hidden border border-zinc-800">
-                          <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border-b border-zinc-800">
-                            <span className="w-[3px] h-3 rounded-full shrink-0" style={{ background: c.accent }} />
-                            <span className={`text-[9.5px] font-mono font-bold uppercase tracking-[0.2em] ${c.text}`}>
-                              Explanation
-                            </span>
-                          </div>
-                          <div className="px-3 py-2.5">
-                            <ExplanationRows
-                              text={issue.explanation}
-                              accent={c.accent}
-                              textColor={c.text}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Fix — syntax highlighted */}
-                        {issue.suggestedFix && (
-                          <div className="rounded-lg overflow-hidden border border-zinc-700/50">
-                            <div className="flex items-center justify-between px-3 py-1.5 border-b border-zinc-700/40"
-                                 style={{ background: '#161b22' }}>
-                              <div className="flex items-center gap-2">
-                                <span className="w-[3px] h-3 rounded-full shrink-0" style={{ background: c.accent }} />
-                                <span className={`text-[9.5px] font-mono font-bold uppercase tracking-[0.2em] ${c.text}`}>Fix</span>
-                              </div>
-                              <span className="text-[9px] font-mono text-zinc-600 uppercase">{language}</span>
+                        {/* Explanation & Fix Unified Card */}
+                        <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-4 space-y-3.5 select-text text-left">
+                          {/* Root Cause */}
+                          {parseExplanation(issue.explanation).rootCause && (
+                            <div className="flex flex-col gap-1 text-left">
+                              <span className="text-[9.5px] font-mono text-zinc-500 uppercase tracking-wider font-semibold">Root Cause</span>
+                              <ReactMarkdown
+                                remarkPlugins={[remarkMath]}
+                                rehypePlugins={[rehypeKatex]}
+                                components={exMd}
+                              >
+                                {parseExplanation(issue.explanation).rootCause}
+                              </ReactMarkdown>
                             </div>
-                            <SyntaxHighlighter
-                              style={vscDarkPlus} language={language || 'text'} PreTag="div" wrapLongLines
-                              customStyle={{ margin: 0, padding: '9px 13px', background: '#0d1117', fontSize: '12px', fontFamily: '"Fira Code", monospace', lineHeight: '1.55', borderRadius: 0 }}
-                            >
-                              {issue.suggestedFix}
-                            </SyntaxHighlighter>
-                          </div>
-                        )}
+                          )}
+
+                          {/* Impact */}
+                          {parseExplanation(issue.explanation).impact && (
+                            <div className="flex flex-col gap-1 border-t border-zinc-900/60 pt-3 text-left">
+                              <span className="text-[9.5px] font-mono text-zinc-500 uppercase tracking-wider font-semibold">Impact</span>
+                              <ReactMarkdown
+                                remarkPlugins={[remarkMath]}
+                                rehypePlugins={[rehypeKatex]}
+                                components={exMd}
+                              >
+                                {parseExplanation(issue.explanation).impact}
+                              </ReactMarkdown>
+                            </div>
+                          )}
+
+                          {/* Suggested Fix */}
+                          {issue.suggestedFix && (
+                            <div className="flex flex-col gap-1 border-t border-zinc-900/60 pt-3 text-left">
+                              <span className="text-[9.5px] font-mono text-emerald-500/80 uppercase tracking-wider font-semibold">Suggested Fix</span>
+                              <div className="rounded-lg overflow-hidden border border-emerald-500/15 bg-emerald-950/5 mt-2">
+                                <div className="flex items-center justify-between px-3 py-1 bg-emerald-950/10 border-b border-emerald-500/10 font-sans">
+                                  <span className="text-[8.5px] font-mono text-emerald-400/80 font-bold uppercase tracking-wider">Fix</span>
+                                  <span className="text-[8px] font-mono text-emerald-600/70 uppercase">{language || 'javascript'}</span>
+                                </div>
+                                <SyntaxHighlighter
+                                  style={vscDarkPlus} language={language || 'text'} PreTag="div" wrapLongLines
+                                  customStyle={{ margin: 0, padding: '10px 14px', background: 'transparent', fontSize: '12px', fontFamily: '"Fira Code", monospace', lineHeight: '1.6' }}
+                                >
+                                  {issue.suggestedFix}
+                                </SyntaxHighlighter>
+                              </div>
+                            </div>
+                          )}
+                        </div>
 
                       </div>
                     </motion.div>
