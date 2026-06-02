@@ -46,7 +46,7 @@ CodeInsight/
 │   │   │   ├── ai/             # Groq API stream & prompt managers
 │   │   │   └── analysis/       # Code issue regex & structure parsers
 │   │   ├── routes/             # API Router (analyze, diagram, stream)
-│   │   └── app.js              # Express app entry point
+│   │   └── server.js           # Express app entry point
 │   ├── .env                    # Backend environment config
 │   └── package.json
 │
@@ -118,7 +118,7 @@ To deploy this version of the application:
 
 ### Backend Deployment (Render, Heroku, Railway, etc.)
 1. Create a web service linked to this repository.
-2. Set the build command to `npm install` and start command to `node src/app.js` (inside the `backend` folder context).
+2. Set the build command to `npm install` and start command to `npm start` (or `node src/server.js`) inside the `backend` folder context.
 3. Set the environment variables in your deployment dashboard:
    *   `GROQ_API_KEY` (Your secret key)
    *   `NODE_ENV=production`
