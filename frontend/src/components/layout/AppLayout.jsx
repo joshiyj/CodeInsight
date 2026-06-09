@@ -7,6 +7,7 @@ import CodeEditor                from '../editor/CodeEditor.jsx';
 import AIInsightsPanel           from '../panels/AIInsightsPanel.jsx';
 import IssueListPanel            from '../panels/IssueListPanel.jsx';
 import DiagramPanel              from '../visualization/DiagramPanel.jsx';
+import ExecutionSimulator from '../visualization/ExecutionSimulator.jsx';
 
 const LANGUAGES = [
   { value: 'javascript', label: 'JavaScript' },
@@ -92,7 +93,7 @@ export default function AppLayout() {
         <div className="w-px bg-zinc-800 shrink-0" />
 
         {/* ── Right: Tabbed Panel (fixed width) ────────────────  */}
-        <div className="w-[420px] shrink-0 flex flex-col overflow-hidden">
+        <div className={`${activeTab === 'simulate' ? 'w-[600px]' : 'w-[420px]'} shrink-0 flex flex-col overflow-hidden transition-all duration-200`}>
 
           {/* Tab bar */}
           <div className="flex items-center border-b border-zinc-800 shrink-0 px-1 pt-1">
@@ -114,6 +115,11 @@ export default function AppLayout() {
               active={activeTab === 'diagram'}
               onClick={() => setActiveTab('diagram')}
             />
+            <TabButton
+              label="Simulate"
+              active={activeTab === 'simulate'}
+              onClick={() => setActiveTab('simulate')}
+            />
           </div>
 
           {/* Tab content */}
@@ -121,6 +127,7 @@ export default function AppLayout() {
             {activeTab === 'insights' && <AIInsightsPanel />}
             {activeTab === 'issues'   && <IssueListPanel  />}
             {activeTab === 'diagram'  && <DiagramPanel    />}
+            {activeTab === 'simulate' && <ExecutionSimulator />}
           </div>
 
         </div>
