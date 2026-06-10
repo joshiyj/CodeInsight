@@ -355,7 +355,50 @@ export default function AIInsightsPanel() {
   if (!insights && !isStreaming) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3">
-        <span className="text-2xl text-zinc-800 select-none">✦</span>
+        <div className="w-12 h-12 opacity-35 select-none mb-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="w-full h-full">
+            <defs>
+              <linearGradient id="sparkGradientPanel" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#A855F7" /> 
+                <stop offset="100%" stopColor="#6366F1" />
+              </linearGradient>
+              
+              <linearGradient id="bracketGradientPanel" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#F8FAFC" /> 
+                <stop offset="100%" stopColor="#94A3B8" />
+              </linearGradient>
+
+              <filter id="glowPanel" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="12" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+
+            <path 
+              d="M 190 150 L 70 256 L 190 362" 
+              fill="none" 
+              stroke="url(#bracketGradientPanel)" 
+              strokeWidth="44" 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+            />
+
+            <path 
+              d="M 322 150 L 442 256 L 322 362" 
+              fill="none" 
+              stroke="url(#bracketGradientPanel)" 
+              strokeWidth="44" 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+            />
+
+            <path 
+              d="M 256 120 C 256 210 210 256 120 256 C 210 256 256 302 256 392 C 256 302 302 256 392 256 C 302 256 256 210 256 120 Z" 
+              fill="url(#sparkGradientPanel)" 
+              filter="url(#glowPanel)"
+            />
+          </svg>
+        </div>
         <p className="text-[11.5px] text-zinc-600 text-center leading-relaxed px-6">Click <span className="text-zinc-400 font-medium">Analyze</span> to generate<br />an AI-powered code review.</p>
       </div>
     );
@@ -369,9 +412,18 @@ export default function AIInsightsPanel() {
   const warnings = issues?.filter(i => i.severity === 'warning').length || 0;
   const info = issues?.filter(i => i.severity === 'info' || i.severity === 'hint').length || 0;
   const score = Math.max(0, 100 - (errors * 15 + warnings * 8 + info * 3));
-  let riskLabel = 'Low Risk', riskColor = 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5';
-  if (score < 70) { riskLabel = 'High Risk'; riskColor = 'text-red-400 border-red-500/20 bg-red-500/5'; } 
-  else if (score < 90) { riskLabel = 'Medium Risk'; riskColor = 'text-yellow-400 border-yellow-500/20 bg-yellow-500/5'; }
+  let scoreLabel = 'Excellent';
+  let scoreColor = '#10b981'; // Emerald
+  if (score < 50) {
+    scoreLabel = 'Poor';
+    scoreColor = '#ef4444'; // Red
+  } else if (score < 70) {
+    scoreLabel = 'Fair';
+    scoreColor = '#f97316'; // Orange
+  } else if (score < 90) {
+    scoreLabel = 'Good';
+    scoreColor = '#f59e0b'; // Amber
+  }
 
   let timeComplexity = null, spaceComplexity = null;
   if (insights) {
@@ -385,6 +437,59 @@ export default function AIInsightsPanel() {
     if (!str) return 'N/A';
     return str.replace(/\\mathcal\{O\}/g, 'O').replace(/\\mathcal/g, '').replace(/[\$\{\}]/g, '').replace(/\^2/g, '²').replace(/\^3/g, '³').replace(/\^n/g, 'ⁿ');
   }
+
+  function getComplexityMeta(complexityStr) {
+    if (!complexityStr || complexityStr === 'N/A') {
+      return {
+        rating: 'N/A',
+        colorClass: 'text-zinc-400 bg-zinc-800/20 border-zinc-700/30'
+      };
+    }
+    const clean = complexityStr.replace(/\s+/g, '').toLowerCase();
+    
+    // Constant / Logarithmic / O(1) / O(log n)
+    if (clean.includes('o(1)') || clean.includes('o(logn)') || clean.includes('o(log(n))')) {
+      return {
+        rating: 'Optimal',
+        colorClass: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.05)]'
+      };
+    }
+    // Linear / O(n)
+    if (clean.includes('o(n)') && !clean.includes('logn') && !clean.includes('log(n)') && !clean.includes('^') && !clean.includes('²') && !clean.includes('log')) {
+      return {
+        rating: 'Linear',
+        colorClass: 'text-teal-400 bg-teal-500/10 border-teal-500/20 shadow-[0_0_12px_rgba(20,184,166,0.05)]'
+      };
+    }
+    // Linearithmic / O(n log n)
+    if (clean.includes('o(nlogn)') || clean.includes('o(nlog(n))') || (clean.includes('o(n') && clean.includes('log'))) {
+      return {
+        rating: 'Moderate',
+        colorClass: 'text-amber-400 bg-amber-500/10 border-amber-500/20 shadow-[0_0_12px_rgba(245,158,11,0.05)]'
+      };
+    }
+    // Quadratic / O(n^2) / Cubic / O(n^3)
+    if (clean.includes('o(n^2)') || clean.includes('o(n²)') || clean.includes('o(n^3)') || clean.includes('o(n³)') || clean.includes('^2') || clean.includes('²')) {
+      return {
+        rating: 'Slow',
+        colorClass: 'text-orange-400 bg-orange-500/10 border-orange-500/20 shadow-[0_0_12px_rgba(249,115,22,0.05)]'
+      };
+    }
+    // Exponential / Factorial / O(2^n)
+    if (clean.includes('o(2^') || clean.includes('o(2ⁿ)') || clean.includes('o(n!)') || clean.includes('o(m!)') || clean.includes('^n') || clean.includes('ⁿ')) {
+      return {
+        rating: 'Critical',
+        colorClass: 'text-rose-500 bg-rose-500/10 border-rose-500/20 shadow-[0_0_12px_rgba(244,63,94,0.05)]'
+      };
+    }
+    return {
+      rating: 'Standard',
+      colorClass: 'text-zinc-400 bg-zinc-800/30 border-zinc-700/20'
+    };
+  }
+
+  const timeMeta = getComplexityMeta(timeComplexity);
+  const spaceMeta = getComplexityMeta(spaceComplexity);
 
   return (
     <div className="h-full overflow-y-auto text-left">
@@ -403,35 +508,95 @@ export default function AIInsightsPanel() {
           )}
         </div>
 
-        {/* Summary grid */}
+        {/* Summary Dashboard Row */}
         {insights && (
-          <div className="flex flex-col gap-3.5 mb-6 shrink-0 select-none">
-            {/* Quality Score Card */}
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/35 p-4 flex flex-col items-center justify-center text-center w-full">
-              <span className="text-[11.5px] font-semibold text-zinc-400 tracking-wide">Quality Score</span>
-              <span className="text-2xl font-bold font-mono text-zinc-100 mt-1">{score}/100</span>
-              <span className={`inline-block text-[9.5px] font-mono text-center rounded border px-2.5 py-0.5 mt-2.5 ${riskColor}`}>
-                {riskLabel}
-              </span>
-            </div>
-
-            {/* Complexity Main Wrapper */}
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/20 p-4 flex flex-col w-full">
-              <div className="grid grid-cols-2 gap-3.5">
-                {/* Time Complexity Card */}
-                <div className="rounded-lg border border-zinc-800/80 bg-zinc-900/40 p-3.5 flex flex-col items-center justify-center text-center">
-                  <span className="text-[11px] text-zinc-400 font-semibold tracking-wide uppercase">Time Complexity</span>
-                  <div className="mt-2.5 px-3 py-1 rounded border border-indigo-500/25 bg-indigo-950/15 font-mono text-[13px] font-bold text-indigo-300">
-                    {formatComplexity(timeComplexity)}
+          <div className="dashboard-container rounded-xl border border-zinc-800/60 bg-zinc-900/25 p-4 mb-6 select-none relative overflow-hidden">
+            <div className="dashboard-inner">
+              {/* Left side: Quality Score */}
+              <div className="flex flex-col items-center justify-center shrink-0">
+                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Quality Score</span>
+                <div className="relative flex items-center justify-center w-24 h-24">
+                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                    <defs>
+                      <filter id="score-glow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="3.5" result="blur" />
+                        <feComponentTransfer in="blur" result="glow">
+                          <feFuncA type="linear" slope="0.45" />
+                        </feComponentTransfer>
+                        <feMerge>
+                          <feMergeNode in="glow" />
+                          <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                      </filter>
+                    </defs>
+                    
+                    {/* Track circle */}
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      stroke="#1f1f22" // zinc-850 equivalent
+                      strokeWidth="7"
+                      fill="transparent"
+                    />
+                    
+                    {/* Progress circle */}
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      stroke={scoreColor}
+                      strokeWidth="7"
+                      fill="transparent"
+                      strokeDasharray="251.2"
+                      strokeDashoffset={251.2 - (score / 100) * 251.2}
+                      strokeLinecap="round"
+                      filter="url(#score-glow)"
+                      style={{ transition: 'stroke-dashoffset 0.8s ease-in-out, stroke 0.5s ease' }}
+                    />
+                  </svg>
+                  
+                  {/* Center text */}
+                  <div className="absolute flex flex-col items-center justify-center text-center font-sans">
+                    <span className="text-2xl font-black font-mono tracking-tight" style={{ color: scoreColor, textShadow: `0 0 15px ${scoreColor}30` }}>
+                      {score}
+                    </span>
+                    <span className="text-[9px] font-bold text-zinc-400 mt-0.5 uppercase tracking-wider">
+                      {scoreLabel}
+                    </span>
                   </div>
+                </div>
+              </div>
+
+              {/* Responsive Divider */}
+              <div className="dashboard-divider" />
+
+              {/* Right side: Complexities */}
+              <div className="complexities-list">
+                {/* Time Complexity Card */}
+                <div className="complexity-card flex items-center justify-between p-2.5 rounded-lg bg-zinc-950/45 border border-zinc-800/60 hover:bg-zinc-800/15 hover:border-zinc-700/50 transition-all duration-150 group">
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-bold text-zinc-500 group-hover:text-zinc-400 uppercase tracking-wider transition-colors">Time Complexity</span>
+                    <span className="text-[13.5px] font-extrabold font-mono text-zinc-100 mt-0.5 tracking-tight">
+                      {formatComplexity(timeComplexity)}
+                    </span>
+                  </div>
+                  <span className={`text-[9.5px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded border select-none transition-all duration-150 ${timeMeta.colorClass}`}>
+                    {timeMeta.rating}
+                  </span>
                 </div>
 
                 {/* Space Complexity Card */}
-                <div className="rounded-lg border border-zinc-800/80 bg-zinc-900/40 p-3.5 flex flex-col items-center justify-center text-center">
-                  <span className="text-[11px] text-zinc-400 font-semibold tracking-wide uppercase">Space Complexity</span>
-                  <div className="mt-2.5 px-3 py-1 rounded border border-indigo-500/25 bg-indigo-950/15 font-mono text-[13px] font-bold text-indigo-300">
-                    {formatComplexity(spaceComplexity)}
+                <div className="complexity-card flex items-center justify-between p-2.5 rounded-lg bg-zinc-950/45 border border-zinc-800/60 hover:bg-zinc-800/15 hover:border-zinc-700/50 transition-all duration-150 group">
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-bold text-zinc-500 group-hover:text-zinc-400 uppercase tracking-wider transition-colors">Space Complexity</span>
+                    <span className="text-[13.5px] font-extrabold font-mono text-zinc-100 mt-0.5 tracking-tight">
+                      {formatComplexity(spaceComplexity)}
+                    </span>
                   </div>
+                  <span className={`text-[9.5px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded border select-none transition-all duration-150 ${spaceMeta.colorClass}`}>
+                    {spaceMeta.rating}
+                  </span>
                 </div>
               </div>
             </div>

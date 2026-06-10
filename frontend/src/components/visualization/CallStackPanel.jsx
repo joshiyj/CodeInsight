@@ -12,7 +12,8 @@ export default function CallStackPanel({ callStack = [] }) {
         {frames.map((frame, i) => (
           <div
             key={i}
-            className={`px-2.5 py-1.5 rounded text-[11px] font-mono border transition-colors
+            title={frame}
+            className={`px-2.5 py-1.5 rounded text-[11px] font-mono border transition-colors truncate
               ${i === 0
                 ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-300'  // active frame
                 : 'bg-zinc-800 border-zinc-700/40 text-zinc-400'}`}

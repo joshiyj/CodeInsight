@@ -59,11 +59,9 @@ body {
 }
 
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   text-align: center;
-  border-inline: 1px solid var(--border);
   min-height: 100svh;
   display: flex;
   flex-direction: column;
@@ -113,3 +111,73 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+/* ─── Responsive Dashboard Container Queries ─── */
+.dashboard-container {
+  container-type: inline-size;
+  container-name: dashboard;
+  width: 100%;
+}
+
+.dashboard-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.dashboard-divider {
+  width: 100%;
+  height: 1px;
+  background-color: rgba(63, 63, 70, 0.4); /* border-zinc-800/40 equivalent */
+  margin: 4px 0;
+}
+
+.complexities-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.complexity-card {
+  width: 100%;
+}
+
+@container dashboard (min-width: 380px) {
+  .dashboard-inner {
+    flex-direction: row;
+    align-items: center;
+    gap: 20px;
+  }
+  .dashboard-divider {
+    width: 1px;
+    height: 80px;
+    margin: 0 4px;
+    align-self: center;
+  }
+  .complexities-list {
+    flex-direction: column;
+  }
+}
+
+@container dashboard (min-width: 520px) {
+  .dashboard-inner {
+    flex-direction: row;
+    align-items: center;
+    gap: 24px;
+  }
+  .dashboard-divider {
+    width: 1px;
+    height: 80px;
+    margin: 0 4px;
+    align-self: center;
+  }
+  .complexities-list {
+    flex-direction: row;
+  }
+  .complexity-card {
+    flex: 1 1 0%;
+  }
+}
+

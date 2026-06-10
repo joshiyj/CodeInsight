@@ -1,4 +1,13 @@
 export function buildSimulationPrompt(code, language, simulationInput = '') {
+  // Number every line explicitly so the model cannot miscount them.
+  const numberedCode = code
+    .split('\n')
+    .map((line, i) => {
+      const num = String(i + 1).padStart(4, ' ');
+      return `${num}| ${line}`;
+    })
+    .join('\n');
+
   return `You are an exact code execution simulator for ${language}.
 
 Simulate the code step by step and output ONLY a JSON array inside <trace>[...]</trace> tags.
@@ -26,15 +35,16 @@ Rules:
 - description must be specific and reference actual values: "Swapping arr[1]=3 and arr[4]=9"
 - highlightIndices: indices in the primary array being accessed or compared at this step
 - Hard cap: 500 steps maximum — stop after 500 and do not truncate mid-step
+- CRITICAL: The "line" field must be the EXACT line number shown before the | character in the source code below. Do NOT count lines yourself — read the number directly from the prefix.
 
 ${simulationInput
   ? `Use this simulation input: ${simulationInput}`
   : 'Use a small representative input (5-6 elements for sorting, small values for recursion).'}
 
-SOURCE CODE (${language}):
+SOURCE CODE (${language}) — line numbers are shown as "NNNN| <code>":
 \`\`\`
-${code}
+${numberedCode}
 \`\`\`
 
 Produce the full trace now inside <trace>[...]</trace>:`;
-}
+}

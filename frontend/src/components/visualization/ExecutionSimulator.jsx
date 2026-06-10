@@ -11,7 +11,7 @@ const SPEEDS = [
   { label: '4×',   ms: 150  },
 ];
 
-export default function ExecutionSimulator() {
+export default function ExecutionSimulator({ panelWidth = 420 }) {
   const [simInput, setSimInput] = useState('');
 
   const {
@@ -153,9 +153,9 @@ export default function ExecutionSimulator() {
           />
         )}
 
-        {/* Variables + Call Stack side by side */}
+        {/* Variables + Call Stack responsive grid/stack */}
         {currentData && (
-          <div className="grid grid-cols-2 gap-2">
+          <div className={panelWidth >= 500 ? "grid grid-cols-2 gap-2" : "flex flex-col gap-2"}>
             <VariablePanel
               variables={currentData.variables}
               changedVariables={currentData.changedVariables ?? []}
@@ -179,8 +179,8 @@ export default function ExecutionSimulator() {
 
         {/* Buttons + Speed */}
         <div className="flex items-center gap-1.5">
-          {/* Reset */}
-          <CtrlBtn onClick={reset} title="Reset">⏮</CtrlBtn>
+          {/* Jump to start */}
+          <CtrlBtn onClick={() => scrubTo(0)} title="Jump to start">⏮</CtrlBtn>
           {/* Step back */}
           <CtrlBtn onClick={stepBack} title="Step back">◀</CtrlBtn>
           {/* Play / Pause */}
