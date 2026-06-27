@@ -379,12 +379,11 @@ export default function AppLayout() {
       )}
 
       <div className={`flex flex-col h-screen bg-zinc-950 text-white overflow-hidden ${isResizing ? 'cursor-col-resize select-none' : ''}`}>
-
       {/* ── Header ───────────────────────────────────────────── */}
-      <header className="flex items-center gap-4 px-6 py-3 border-b border-zinc-800/80 bg-zinc-950/70 backdrop-blur-md shrink-0 relative z-50">
-        <div className="flex items-center gap-4 mr-auto select-none">
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-600/10 border border-indigo-500/35 shadow-[0_0_12px_rgba(99,102,241,0.15)] p-1.5">
+      <header className="flex items-center gap-2 sm:gap-4 px-3 sm:px-6 py-3 border-b border-zinc-800/80 bg-zinc-950/70 backdrop-blur-md shrink-0 relative z-50">
+        <div className="flex items-center gap-2.5 sm:gap-4 mr-auto select-none">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            <div className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-600/10 border border-indigo-500/35 shadow-[0_0_12px_rgba(99,102,241,0.15)] p-1.5">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="w-full h-full">
                 <defs>
                   <linearGradient id="sparkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -428,19 +427,22 @@ export default function AppLayout() {
                 />
               </svg>
             </div>
-            <span className="font-extrabold text-base tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent">
+            <span className="font-extrabold text-base tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent hidden sm:block">
               CodeInsight
             </span>
           </div>
-
+  
           {/* Load Example Dropdown (Sleek Glassmorphic) */}
           <div className="relative shrink-0" ref={dropdownRef}>
             <button
               onClick={() => setIsExampleOpen(!isExampleOpen)}
-              className="flex items-center gap-2 bg-zinc-900/80 hover:bg-zinc-800/80 border border-indigo-500/35 hover:border-indigo-500/60 text-zinc-200 hover:text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg transition-all duration-200 shadow-md shadow-indigo-500/5 cursor-pointer relative select-none"
+              className="flex items-center gap-1.5 bg-zinc-900/80 hover:bg-zinc-800/80 border border-indigo-500/35 hover:border-indigo-500/60 text-zinc-200 hover:text-white text-xs font-semibold px-2.5 sm:px-3.5 py-1.5 rounded-lg transition-all duration-200 shadow-md shadow-indigo-500/5 cursor-pointer relative select-none"
             >
               <TerminalIcon />
-              <span>Load Example</span>
+              <span>
+                <span className="hidden sm:inline">Load </span>
+                <span>Example</span>
+              </span>
               <svg className={`w-3 h-3 text-zinc-500 transition-transform duration-200 ${isExampleOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
