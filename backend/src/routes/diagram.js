@@ -1,5 +1,6 @@
 import express from 'express';
 import { generateDiagram } from '../modules/visualization/mermaidGenerator.js';
+import { formatGroqError } from '../utils/errorUtils.js';
 
 const router = express.Router();
 
@@ -41,9 +42,10 @@ router.post('/', async (req, res) => {
     const mermaid = await generateDiagram(code, lang);
     return res.json({ mermaid }); // string | null — both are valid success states
   } catch (err) {
-    console.error('[diagram] Gemini error:', err.message);
+    console.error('[diagram] error:', err.message);
+    const userMessage = formatGroqError(err, 'Diagram generation failed');
     return res.status(500).json({
-      error: 'Diagram generation failed',
+      error: userMessage,
       message: err.message,
     });
   }

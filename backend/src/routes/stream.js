@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { streamAnalysis } from '../modules/ai/groqClient.js';
 import { parseIssues }    from '../modules/analysis/issueParser.js';
+import { formatGroqError } from '../utils/errorUtils.js';
 
 export const streamRouter = Router();
 
@@ -61,24 +62,7 @@ streamRouter.get('/', async (req, res) => {
 
   } catch (err) {
     console.error('[Stream] Error:', err.message);
-
-    let userMessage = 'Analysis failed. Check your API key and try again.';
-    const raw = err.message || '';
-
-    if (raw.includes('429') || raw.includes('Too Many Requests') || raw.includes('quota')) {
-      const retryMatch = raw.match(/retry[^\d]*(\d+)[^s]*s/i) ||
-                         raw.match(/retryDelay[":\s]+(\d+)/i)  ||
-                         raw.match(/(\d+)[^\d]*s[^\w]/i);
-      const seconds = retryMatch ? retryMatch[1] : null;
-      userMessage = seconds
-        ? `⏳ Rate limit hit. Please wait ${seconds}s and try again.`
-        : '⏳ Rate limit hit. Please wait a moment and try again.';
-    } else if (raw.includes('API key') || raw.includes('403') || raw.includes('401')) {
-      userMessage = '🔑 Invalid API key. Check GROQ_API_KEY in backend/.env';
-    } else if (raw.includes('503') || raw.includes('overloaded')) {
-      userMessage = '🔄 AI service temporarily overloaded. Try again in a few seconds.';
-    }
-
+    const userMessage = formatGroqError(err, 'Analysis failed. Check your API key and try again.');
     send('error', { message: userMessage });
   } finally {
     res.end();

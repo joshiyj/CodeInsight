@@ -1,5 +1,6 @@
 import { Router }        from 'express';
 import { generateTrace } from '../modules/execution/traceExtractor.js';
+import { formatGroqError } from '../utils/errorUtils.js';
 
 const executeRouter = Router();
 
@@ -23,8 +24,11 @@ executeRouter.post('/', async (req, res) => {
   } catch (err) {
     console.error('[Execute]', err.message);
     const isParseError = err.message.includes('trace') || err.message.includes('parsed') || err.message.includes('valid steps');
+    const userMessage = isParseError
+      ? 'Could not parse execution trace'
+      : formatGroqError(err, 'Simulation failed');
     return res.status(500).json({
-      error:   isParseError ? 'Could not parse execution trace' : 'Simulation failed',
+      error:   userMessage,
       message: err.message,
     });
   }
