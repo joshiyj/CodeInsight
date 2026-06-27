@@ -42,12 +42,128 @@ const SimulateIcon = () => (
   </svg>
 );
 
+const TerminalIcon = () => (
+  <svg className="w-3.5 h-3.5 shrink-0 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+  </svg>
+);
+
+const ERROR_CODE = `public class BubbleSort {
+
+    public static void bubbleSort(int[] arr) {
+
+        for(int i = 0; i <= arr.length; i++) {
+
+            boolean swapped = false;
+
+            for(int j = 0; j < arr.length - i - 1; j++) {
+
+                if(arr[j] > arr[j + 1]) {
+
+                    int temp = arr[j];
+                    arr[j] = arr[j + 1];
+                    arr[j + 1] = temp;
+
+                    swapped = true;
+                }
+            }
+
+            if(swapped = false) {
+                break;
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        int[] arr = {5, 1, 4, 2};
+        
+        bubbleSort(arr);
+    }
+}`;
+
+const CORRECT_CODE = `import java.util.*;
+
+public class BinarySearch {
+
+    public static int binarySearch(int[] arr, int target) {
+
+        int left = 0;
+        int right = arr.length - 1;
+
+        while(left <= right) {
+
+            int mid = left + (right - left) / 2;
+
+            if(arr[mid] == target) {
+                return mid;
+            }
+
+            if(arr[mid] < target) {
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+
+        return -1;
+    }
+
+    public static void main(String[] args) {
+
+        int[] arr = {5, 8, 12, 16, 23};
+        int target = 16;
+
+        int result = binarySearch(arr, target);
+
+        System.out.println("Index: " + result);
+    }
+}`;
+
 export default function AppLayout() {
-  const { code, language, isAnalyzing, setLanguage, setIsAnalyzing } = useEditorStore();
+  const { code, language, isAnalyzing, setCode, setLanguage, setIsAnalyzing } = useEditorStore();
   const { issues, appendInsight, setIssues, setIsStreaming, setError, reset } = useAnalysisStore();
 
   const [activeTab, setActiveTab] = useState('insights'); // 'insights' | 'issues' | 'diagram'
   const cleanupRef = useRef(null);
+
+  const [showLoader, setShowLoader] = useState(true);
+  const [isLoaderFading, setIsLoaderFading] = useState(false);
+
+  useEffect(() => {
+    // Start fading out after 2.2 seconds
+    const fadeTimer = setTimeout(() => {
+      setIsLoaderFading(true);
+    }, 2200);
+
+    // Completely unmount after fade transition (700ms)
+    const removeTimer = setTimeout(() => {
+      setShowLoader(false);
+    }, 2900);
+
+    return () => {
+      clearTimeout(fadeTimer);
+      clearTimeout(removeTimer);
+    };
+  }, []);
+
+  const [isExampleOpen, setIsExampleOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const [isLangOpen, setIsLangOpen] = useState(false);
+  const langDropdownRef = useRef(null);
+
+  // Close dropdowns on click outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsExampleOpen(false);
+      }
+      if (langDropdownRef.current && !langDropdownRef.current.contains(event.target)) {
+        setIsLangOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Resizer states
   const [panelWidth, setPanelWidth] = useState(420);
@@ -199,70 +315,196 @@ export default function AppLayout() {
   }, [code, language, isAnalyzing, reset, appendInsight, setIssues, setIsAnalyzing, setIsStreaming, setError, handleTabChange]);
 
   return (
-    <div className={`flex flex-col h-screen bg-zinc-950 text-white overflow-hidden ${isResizing ? 'cursor-col-resize select-none' : ''}`}>
+    <>
+      {showLoader && (
+        <div className={`fixed inset-0 bg-zinc-950 z-[9999] flex flex-col items-center justify-center transition-all duration-700 ease-out select-none ${isLoaderFading ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'}`}>
+          {/* Subtle purple radial glow */}
+          <div className="absolute w-[500px] h-[500px] rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none animate-pulse-slow" />
+          
+          <div className="flex flex-col items-center gap-6 z-10">
+            {/* Logo Wrapper with Scale & Spin Animation */}
+            <div className="w-20 h-20 animate-logo-intro drop-shadow-[0_0_25px_rgba(99,102,241,0.25)]">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="w-full h-full">
+                <defs>
+                  <linearGradient id="sparkLoader" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#A855F7" /> 
+                    <stop offset="100%" stopColor="#6366F1" />
+                  </linearGradient>
+                  
+                  <linearGradient id="bracketLoader" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#F8FAFC" /> 
+                    <stop offset="100%" stopColor="#94A3B8" />
+                  </linearGradient>
+
+                  <filter id="glowLoader" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="12" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                </defs>
+
+                <path 
+                  d="M 190 150 L 70 256 L 190 362" 
+                  fill="none" 
+                  stroke="url(#bracketLoader)" 
+                  strokeWidth="44" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                />
+
+                <path 
+                  d="M 322 150 L 442 256 L 322 362" 
+                  fill="none" 
+                  stroke="url(#bracketLoader)" 
+                  strokeWidth="44" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                />
+
+                <path 
+                  d="M 256 120 C 256 210 210 256 120 256 C 210 256 256 302 256 392 C 256 302 302 256 392 256 C 302 256 256 210 256 120 Z" 
+                  fill="url(#sparkLoader)" 
+                  filter="url(#glowLoader)"
+                />
+              </svg>
+            </div>
+
+            {/* Name Reveal */}
+            <div className="relative overflow-hidden py-1">
+              <span className="font-extrabold text-2xl tracking-[0.2em] bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent uppercase select-none animate-text-reveal">
+                CodeInsight
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className={`flex flex-col h-screen bg-zinc-950 text-white overflow-hidden ${isResizing ? 'cursor-col-resize select-none' : ''}`}>
 
       {/* ── Header ───────────────────────────────────────────── */}
-      <header className="flex items-center gap-3.5 px-6 py-3 border-b border-zinc-800/80 bg-zinc-950/70 backdrop-blur-md shrink-0">
-        <div className="flex items-center gap-2.5 mr-auto select-none">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-600/10 border border-indigo-500/35 shadow-[0_0_12px_rgba(99,102,241,0.15)] p-1.5">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="w-full h-full">
-              <defs>
-                <linearGradient id="sparkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#A855F7" /> 
-                  <stop offset="100%" stopColor="#6366F1" />
-                </linearGradient>
-                
-                <linearGradient id="bracketGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#F8FAFC" /> 
-                  <stop offset="100%" stopColor="#94A3B8" />
-                </linearGradient>
-
-                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur stdDeviation="12" result="blur" />
-                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                </filter>
-              </defs>
-
-              <path 
-                d="M 190 150 L 70 256 L 190 362" 
-                fill="none" 
-                stroke="url(#bracketGradient)" 
-                strokeWidth="44" 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-              />
-
-              <path 
-                d="M 322 150 L 442 256 L 322 362" 
-                fill="none" 
-                stroke="url(#bracketGradient)" 
-                strokeWidth="44" 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-              />
-
-              <path 
-                d="M 256 120 C 256 210 210 256 120 256 C 210 256 256 302 256 392 C 256 302 302 256 392 256 C 302 256 256 210 256 120 Z" 
-                fill="url(#sparkGradient)" 
-                filter="url(#glow)"
-              />
-            </svg>
+      <header className="flex items-center gap-4 px-6 py-3 border-b border-zinc-800/80 bg-zinc-950/70 backdrop-blur-md shrink-0 relative z-50">
+        <div className="flex items-center gap-4 mr-auto select-none">
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-600/10 border border-indigo-500/35 shadow-[0_0_12px_rgba(99,102,241,0.15)] p-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="w-full h-full">
+                <defs>
+                  <linearGradient id="sparkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#A855F7" /> 
+                    <stop offset="100%" stopColor="#6366F1" />
+                  </linearGradient>
+                  
+                  <linearGradient id="bracketGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#F8FAFC" /> 
+                    <stop offset="100%" stopColor="#94A3B8" />
+                  </linearGradient>
+  
+                  <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="12" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                </defs>
+  
+                <path 
+                  d="M 190 150 L 70 256 L 190 362" 
+                  fill="none" 
+                  stroke="url(#bracketGradient)" 
+                  strokeWidth="44" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                />
+  
+                <path 
+                  d="M 322 150 L 442 256 L 322 362" 
+                  fill="none" 
+                  stroke="url(#bracketGradient)" 
+                  strokeWidth="44" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                />
+  
+                <path 
+                  d="M 256 120 C 256 210 210 256 120 256 C 210 256 256 302 256 392 C 256 302 302 256 392 256 C 302 256 256 210 256 120 Z" 
+                  fill="url(#sparkGradient)" 
+                  filter="url(#glow)"
+                />
+              </svg>
+            </div>
+            <span className="font-extrabold text-base tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent">
+              CodeInsight
+            </span>
           </div>
-          <span className="font-extrabold text-base tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent">
-            CodeInsight
-          </span>
+
+          {/* Load Example Dropdown (Sleek Glassmorphic) */}
+          <div className="relative shrink-0" ref={dropdownRef}>
+            <button
+              onClick={() => setIsExampleOpen(!isExampleOpen)}
+              className="flex items-center gap-2 bg-zinc-900/80 hover:bg-zinc-800/80 border border-indigo-500/35 hover:border-indigo-500/60 text-zinc-200 hover:text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg transition-all duration-200 shadow-md shadow-indigo-500/5 cursor-pointer relative select-none"
+            >
+              <TerminalIcon />
+              <span>Load Example</span>
+              <svg className={`w-3 h-3 text-zinc-500 transition-transform duration-200 ${isExampleOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+  
+            {isExampleOpen && (
+              <div className="absolute left-0 mt-1.5 w-44 rounded-lg bg-zinc-900 border border-zinc-800 shadow-xl z-50 overflow-hidden py-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                <button
+                  onClick={() => {
+                    setCode(ERROR_CODE);
+                    setLanguage('java');
+                    setIsExampleOpen(false);
+                  }}
+                  className="w-full text-left px-3.5 py-2.5 text-xs font-semibold text-red-400 hover:text-red-350 hover:bg-red-500/10 transition-colors"
+                >
+                  Code with Error
+                </button>
+                <button
+                  onClick={() => {
+                    setCode(CORRECT_CODE);
+                    setLanguage('java');
+                    setIsExampleOpen(false);
+                  }}
+                  className="w-full text-left px-3.5 py-2.5 text-xs font-semibold text-emerald-400 hover:text-emerald-350 hover:bg-emerald-500/10 transition-colors"
+                >
+                  Correct Code
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Language selector */}
-        <select
-          value={language}
-          onChange={(e) => setLanguage(e.target.value)}
-          className="bg-zinc-900/60 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white text-xs font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer transition-all duration-150"
-        >
-          {LANGUAGES.map((l) => (
-            <option key={l.value} value={l.value}>{l.label}</option>
-          ))}
-        </select>
+        {/* Language selector Dropdown (Custom Glassmorphic) */}
+        <div className="relative shrink-0" ref={langDropdownRef}>
+          <button
+            onClick={() => setIsLangOpen(!isLangOpen)}
+            className="flex items-center gap-1.5 bg-zinc-900/80 hover:bg-zinc-800/80 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white text-xs font-semibold rounded-lg px-3 py-1.5 transition-all duration-150 cursor-pointer select-none"
+          >
+            <span>{LANGUAGES.find(l => l.value === language)?.label || 'Language'}</span>
+            <svg className={`w-3.5 h-3.5 text-zinc-500 transition-transform duration-200 ${isLangOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+  
+          {isLangOpen && (
+            <div className="absolute right-0 mt-1.5 w-36 rounded-lg bg-zinc-900 border border-zinc-800 shadow-xl z-50 overflow-hidden py-1 animate-in fade-in slide-in-from-top-1 duration-150">
+              {LANGUAGES.map((l) => (
+                <button
+                  key={l.value}
+                  onClick={() => {
+                    setLanguage(l.value);
+                    setIsLangOpen(false);
+                  }}
+                  className={`w-full text-left px-3.5 py-2.5 text-xs transition-colors
+                    ${l.value === language
+                      ? 'text-indigo-400 bg-indigo-500/5 font-semibold'
+                      : 'text-zinc-400 hover:text-white hover:bg-zinc-800'}`}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Analyze button */}
         <button
@@ -366,7 +608,8 @@ export default function AppLayout() {
         </div>
       </div>
     </div>
-  );
+  </>
+);
 }
 
 /* ── Tab Button ──────────────────────────────────────────────── */
