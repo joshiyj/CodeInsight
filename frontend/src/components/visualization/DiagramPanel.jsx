@@ -21,6 +21,10 @@ export default function DiagramPanel() {
 
   const handleGenerate = async () => {
     if (!code?.trim()) return;
+    if (code.length > 1500) {
+      setDiagramError('Code exceeds the maximum limit of 1500 characters for flowchart generation.');
+      return;
+    }
     setDiagramLoading(true);
     try {
       const { mermaid } = await fetchDiagram(code, language);

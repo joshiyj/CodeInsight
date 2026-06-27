@@ -35,8 +35,12 @@ export function useExecution() {
   const simulate = useCallback(async (simulationInput = '') => {
     clearTimer();
     reset();
-    setLoading(true);
     const { code, language } = useEditorStore.getState();
+    if (code && code.length > 1500) {
+      setError('Code exceeds the maximum limit of 1500 characters for simulation.');
+      return;
+    }
+    setLoading(true);
     try {
       const { steps: s, truncated: t } = await simulateCode(code, language, simulationInput);
       setSteps(s, t);

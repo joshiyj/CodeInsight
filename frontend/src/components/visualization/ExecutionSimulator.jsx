@@ -1,4 +1,4 @@
-import { useState }       from 'react';
+
 import { useExecution }   from '../../hooks/useExecution.js';
 import VariablePanel      from './VariablePanel.jsx';
 import ArrayVisualizer    from './ArrayVisualizer.jsx';
@@ -12,8 +12,6 @@ const SPEEDS = [
 ];
 
 export default function ExecutionSimulator({ panelWidth = 420 }) {
-  const [simInput, setSimInput] = useState('');
-
   const {
     steps, currentStep, currentStepData,
     isPlaying, speed, isLoading, error, truncated,
@@ -31,25 +29,11 @@ export default function ExecutionSimulator({ panelWidth = 420 }) {
   // ── Idle state ────────────────────────────────────────────────
   if (!isLoading && !error && !hasSteps) {
     return (
-      <div className="flex flex-col h-full p-4 gap-3">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">
-            Simulation Input <span className="text-zinc-600">(optional)</span>
-          </label>
-          <input
-            value={simInput}
-            onChange={e => setSimInput(e.target.value)}
-            placeholder="e.g. arr = [64, 34, 25, 12, 22]"
-            className="w-full bg-zinc-900 border border-zinc-700 text-zinc-300 text-[12px] font-mono
-                       rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500
-                       placeholder:text-zinc-600"
-          />
-        </div>
-
+      <div className="flex flex-col h-full p-4 gap-4">
         <button
-          onClick={() => simulate(simInput)}
+          onClick={() => simulate()}
           className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500
-                     text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+                     text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors"
         >
           ▶ Simulate
         </button>
@@ -83,7 +67,7 @@ export default function ExecutionSimulator({ panelWidth = 420 }) {
         <span className="text-3xl">⚠️</span>
         <p className="text-red-400 text-sm">{error}</p>
         <button
-          onClick={() => simulate(simInput)}
+          onClick={() => simulate()}
           className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white text-sm rounded-lg transition-colors"
         >
           Retry
@@ -107,7 +91,7 @@ export default function ExecutionSimulator({ panelWidth = 420 }) {
           <span className="text-[10px]">✕</span> Discard
         </button>
         <button
-          onClick={() => simulate(simInput)}
+          onClick={() => simulate()}
           disabled={isLoading}
           className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg
                      bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30
@@ -121,7 +105,7 @@ export default function ExecutionSimulator({ panelWidth = 420 }) {
       {/* Truncation warning */}
       {truncated && (
         <div className="shrink-0 mx-3 mt-2 px-3 py-1.5 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-          <p className="text-[10.5px] text-yellow-400">⚠️ Trace capped at 500 steps for performance</p>
+          <p className="text-[10.5px] text-yellow-400">⚠️ Trace capped at 25 steps for performance</p>
         </div>
       )}
 

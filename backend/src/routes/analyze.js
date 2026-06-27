@@ -5,7 +5,7 @@ import { streamRouter } from './stream.js';
 export const analyzeRouter = Router();
 
 const VALID_LANGUAGES = ['javascript', 'python', 'java', 'c', 'cpp'];
-const MAX_CODE_LENGTH = 10_000;
+const MAX_CODE_LENGTH = 1500;
 
 // Validation middleware shared by both routes
 export function validateAnalysisInput(req, res, next) {
@@ -16,7 +16,7 @@ export function validateAnalysisInput(req, res, next) {
     return res.status(400).json({ error: 'code is required and must be a string' });
   }
   if (code.length > MAX_CODE_LENGTH) {
-    return res.status(400).json({ error: `code exceeds maximum length of ${MAX_CODE_LENGTH} characters` });
+    return res.status(400).json({ error: `Code exceeds the maximum limit of 1500 characters for code review.` });
   }
   if (!language || !VALID_LANGUAGES.includes(language.toLowerCase())) {
     return res.status(400).json({

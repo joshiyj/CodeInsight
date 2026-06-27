@@ -55,17 +55,6 @@ streamRouter.get('/', async (req, res) => {
 
     // Parse and send structured issues
     const issues = parseIssues(fullText);
-    console.log(`[Stream] Parsed ${issues.length} issues`);
-
-    if (issues.length === 0) {
-      const start = fullText.indexOf('<issues>');
-      const end   = fullText.indexOf('</issues>');
-      if (start !== -1) {
-        console.log('[Stream] Issues block:\n', fullText.slice(start, end + 10));
-      } else {
-        console.log('[Stream] No <issues> block. Last 200 chars:\n', fullText.slice(-200));
-      }
-    }
 
     send('issues',   issues);
     send('complete', { issueCount: issues.length });

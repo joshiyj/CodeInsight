@@ -6,8 +6,16 @@ import { analyzeRouter } from './routes/analyze.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import diagramRouter from './routes/diagram.js';
 import executeRouter from './routes/execute.js';
+import {
+  reviewMinuteLimiter,  reviewDayLimiter,
+  executeMinuteLimiter, executeDayLimiter,
+  diagramMinuteLimiter, diagramDayLimiter,
+} from './middleware/rateLimiter.js';
 
 const app = express();
+
+// ── Trust proxy — required for correct req.ip behind Render/Railway/Vercel ──
+app.set('trust proxy', 1);
 
 // ── Middleware ────────────────────────────────────────────────
 const allowedOrigins = [
@@ -31,19 +39,21 @@ app.use(cors({
 app.use(express.json({ limit: '50kb' }));
 
 // ── Routes ────────────────────────────────────────────────────
-app.use('/api/analyze', analyzeRouter);
+// Review: day checked first so daily message takes priority over per-minute message
+app.use('/api/analyze', reviewDayLimiter, reviewMinuteLimiter, analyzeRouter);
 
-app.use('/api/execute', executeRouter);
+// Simulation: day checked first so daily message takes priority over per-minute message
+app.use('/api/execute', executeDayLimiter, executeMinuteLimiter, executeRouter);
+
+// Flowchart: day checked first so daily message takes priority over per-minute message
+app.use('/api/diagram', diagramDayLimiter, diagramMinuteLimiter, diagramRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', env: config.nodeEnv });
 });
 
-// ── Error Handler (must be last) ──────────────────────────────
+// ── Error Handler (must be after ALL routes) ──────────────────
 app.use(errorHandler);
-
-// ── Mermaid Diagram Router ──────────────────────────────────────────────
-app.use('/api/diagram', diagramRouter);
 
 // ── Start ─────────────────────────────────────────────────────
 app.listen(config.port, () => {

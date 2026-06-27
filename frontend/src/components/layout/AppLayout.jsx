@@ -175,6 +175,11 @@ export default function AppLayout() {
 
   const handleAnalyze = useCallback(() => {
     if (isAnalyzing) return;
+    if (code && code.length > 1500) {
+      setError('Code exceeds the maximum limit of 1500 characters for code review.');
+      handleTabChange('insights');
+      return;
+    }
     cleanupRef.current?.();
     reset();
     setIsAnalyzing(true);

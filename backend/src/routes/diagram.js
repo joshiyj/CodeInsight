@@ -33,11 +33,12 @@ router.post('/', async (req, res) => {
     });
   }
 
-  // Truncate very large inputs — keep prompt manageable
-  const truncatedCode = code.length > 8000 ? code.slice(0, 8000) : code;
+  if (code.length > 1500) {
+    return res.status(400).json({ error: 'Code exceeds the maximum limit of 1500 characters for flowchart generation.' });
+  }
 
   try {
-    const mermaid = await generateDiagram(truncatedCode, lang);
+    const mermaid = await generateDiagram(code, lang);
     return res.json({ mermaid }); // string | null — both are valid success states
   } catch (err) {
     console.error('[diagram] Gemini error:', err.message);

@@ -13,11 +13,12 @@ executeRouter.post('/', async (req, res) => {
 
   if (!language || !SUPPORTED.includes(language.toLowerCase()))
     return res.status(400).json({ error: `Unsupported language: ${language}` });
-
-  const truncatedCode = code.length > 8000 ? code.slice(0, 8000) : code;
+  if (code.length > 1500) {
+    return res.status(400).json({ error: 'Code exceeds the maximum limit of 1500 characters for simulation.' });
+  }
 
   try {
-    const result = await generateTrace(truncatedCode, language.toLowerCase(), simulationInput);
+    const result = await generateTrace(code, language.toLowerCase(), simulationInput);
     return res.json(result); // { steps, truncated, stepCount }
   } catch (err) {
     console.error('[Execute]', err.message);
