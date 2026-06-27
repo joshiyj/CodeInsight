@@ -22,7 +22,13 @@ function make(windowMs, max, message) {
     max,
     standardHeaders: true,
     legacyHeaders:   false,
-    keyGenerator: (req) => ipKeyGenerator(req.ip),
+    keyGenerator: (req) => {
+      let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      if (typeof ip === 'string' && ip.includes(',')) {
+        ip = ip.split(',')[0].trim();
+      }
+      return ipKeyGenerator(ip);
+    },
     handler: (_req, res) => res.status(429).json({ error: message }),
   });
 }

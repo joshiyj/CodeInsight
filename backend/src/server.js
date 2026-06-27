@@ -15,7 +15,7 @@ import {
 const app = express();
 
 // ── Trust proxy — required for correct req.ip behind Render/Railway/Vercel ──
-app.set('trust proxy', 1);
+app.set('trust proxy', true);
 
 // ── Middleware ────────────────────────────────────────────────
 const allowedOrigins = [
