@@ -5,38 +5,84 @@ export function createAnalysisStream(code, language, { onToken, onIssues, onComp
   const params = new URLSearchParams({ code, language });
   const url    = `${API_URL}/api/analyze/stream?${params.toString()}`;
 
-  // Pre-flight: check for rate-limit (429) before opening EventSource.
-  // EventSource can't read HTTP status codes, so a 429 just fires onerror
-  // with no message — resulting in the misleading "Connection lost" fallback.
-  fetch(url, { headers: { Accept: 'text/event-stream' } }).then(async (probe) => {
-    if (!probe.ok) {
-      const body = await probe.json().catch(() => ({}));
-      onError(body.error || `Request failed (${probe.status})`);
-      return;
-    }
-
-    // Server accepted — open the real EventSource connection
-    const es = new EventSource(url);
-
-    es.addEventListener('token',    (e) => onToken(JSON.parse(e.data).text));
-    es.addEventListener('issues',   (e) => {
-      const list = JSON.parse(e.data);
-      onIssues(list);
-    });
-    es.addEventListener('complete', (e) => { onComplete(JSON.parse(e.data)); es.close(); });
-    es.addEventListener('error',    (e) => {
-      const msg = e.data
-        ? (JSON.parse(e.data).message || 'Unknown error')
-        : 'Connection lost — check the backend is running.';
-      onError(msg);
-      es.close();
-    });
-    es.onerror = () => { onError('Connection lost — check the backend is running.'); es.close(); };
-  }).catch(() => {
-    onError('Connection lost — check the backend is running.');
-  });
-
-  // Return a cancel function (best-effort: no-op if ES not yet opened)
   let cancelled = false;
-  return () => { cancelled = true; };
+  let reader = null;
+
+  // Run async stream read
+  (async () => {
+    try {
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        onError(body.error || `Request failed (${response.status})`);
+        return;
+      }
+
+      if (!response.body) {
+        onError('ReadableStream is not supported by the server response.');
+        return;
+      }
+
+      reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      while (!cancelled) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        
+        // Split by double newline (SSE block separator)
+        const parts = buffer.split('\n\n');
+        buffer = parts.pop() || ''; // Keep the last incomplete block in the buffer
+
+        for (const part of parts) {
+          const lines = part.split('\n');
+          let eventName = '';
+          let dataStr = '';
+
+          for (const line of lines) {
+            if (line.startsWith('event:')) {
+              eventName = line.slice(6).trim();
+            } else if (line.startsWith('data:')) {
+              dataStr = line.slice(5).trim();
+            }
+          }
+
+          if (!dataStr) continue;
+
+          try {
+            const data = JSON.parse(dataStr);
+            if (eventName === 'token') {
+              onToken(data.text);
+            } else if (eventName === 'issues') {
+              onIssues(data);
+            } else if (eventName === 'complete') {
+              onComplete(data);
+            } else if (eventName === 'error') {
+              onError(data.message || 'Unknown error');
+            }
+          } catch (e) {
+            console.error('Failed to parse stream event JSON:', e);
+          }
+        }
+      }
+
+    } catch (err) {
+      if (!cancelled) {
+        console.error('Stream reader error:', err);
+        onError('Connection lost — check the backend is running.');
+      }
+    }
+  })();
+
+  // Return a cancel function
+  return () => {
+    cancelled = true;
+    if (reader) {
+      reader.cancel().catch(() => {});
+    }
+  };
 }
