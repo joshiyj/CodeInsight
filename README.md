@@ -23,9 +23,8 @@
 
 ## 📺 Demo
 
-<!-- DEMO_GIF_PLACEHOLDER -->
-![CodeInsight Demo](./assets/demo.gif)
-<!-- Replace demo.gif with actual screen recording before publishing -->
+
+https://github.com/user-attachments/assets/d62f0638-162d-4c0f-ad1f-0a53b9215a49
 
 ---
 
